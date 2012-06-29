@@ -1,0 +1,13 @@
+// Example config.
+{
+  // These settings are required.
+  "server" : "irc.example.com",     // Server to connect to.
+  "port" : 6667,                    // Port to connect on.
+  "nick" : "Yuki",                  // Nickname to use.
+  // These settings are optional.
+  "user" : "Yuki",                  // Username. Set to nick when not supplied.
+  "realname" : "Nagato Yuki",       // Realname. Set to user if not supplied.
+  "channels" : "#sosbrigade,#dpt",  // Comma separated list of channels to join.
+  "nickserv" : "password",          // NickServ password. Used to identify.
+  "ssl" : false                     // Whether to use ssl. Defaults to false.
+}

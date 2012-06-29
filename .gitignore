@@ -4,5 +4,7 @@
 !header
 !COPYING
 !README*
+!yukirc.json
 
+!yuki/
 !*.py
