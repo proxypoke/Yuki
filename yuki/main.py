@@ -109,4 +109,4 @@ def loop(irc, parser, config):
         # restart timer if it's off
         if not check.is_alive():
             check.start()
-        check = threading.Timer(30, dpt.update())
+        check = threading.Timer(30, dpt.update)
