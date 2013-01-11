@@ -8,6 +8,12 @@
 import requests
 
 
+class Thread(dict):
+    '''Needed to be able to add Threads to a set.'''
+    def __hash__(self):
+        return self['no']
+
+
 def get_threads(board, page=None):
     '''Get threads from a board.
 
@@ -27,7 +33,7 @@ def get_threads(board, page=None):
     else:
         threads = content['threads']
 
-    return threads
+    return [Thread(t) for t in threads]
 
 
 def check404(url):

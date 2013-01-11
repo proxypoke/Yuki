@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # Author: slowpoke <proxypoke at lavabit dot com>
 #
@@ -15,6 +16,7 @@ from blackbox import IRC, Parser
 import threading
 import json
 import argparse
+import time
 
 
 def main():
@@ -90,7 +92,8 @@ def connect(config):
 def loop(irc, parser, config):
     '''Connection loop. Receive data and handle commands.'''
 
-    check = threading.Timer(30, dpt.check_for_dpt)
+    update(irc, config)
+    check = threading.Timer(30, update, args=[irc, config])
 
     while True:
         data = irc.recv()
@@ -100,17 +103,22 @@ def loop(irc, parser, config):
         if event.command == "PRIVMSG":
             words = event.params[-1].split()
             if "~dpt" in words:
-                urls = dpt.get_dpt_urls()
-                if len(urls) == 1:
-                    url = urls.pop()
-                    urls.add(url)
+                threads = dpt.get_dpts(check=False)
+                if len(threads) == 1:
+                    thread = threads[0]
+                    url = dpt.thread_url.format(thread['no'])
                     irc.say(event.params[0],
-                            "There's a DPT at {0}".format(url))
-                elif len(urls) > 1:
+                            "There's a DPT at {0}. [{2}, {1} replies]"
+                            .format(url, thread['replies'],
+                                    'λ' if dpt.match_image(thread) else '?'))
+                elif len(threads) > 1:
                     irc.say(event.params[0],
                             "There appear to be multiple DPTs:")
-                    for url in urls:
-                        irc.say(event.params[0], url)
+                    for thread in threads:
+                        url = dpt.thread_url.format(thread['no'])
+                        irc.say(event.params[0], "{0} [{2} {1} replies]"
+                                .format(url, thread['replies'],
+                                        'λ' if dpt.match_image(thread) else '?'))
                 else:
                     irc.say(event.params[0],
                             "There does not appear to be an active DPT.")
@@ -120,5 +128,26 @@ def loop(irc, parser, config):
 
         # restart timer if it's off
         if not check.is_alive():
+            check = threading.Timer(30, update, args=[irc, config])
             check.start()
-        check = threading.Timer(30, dpt.check_for_dpt)
+
+
+def update(irc, config):
+    '''Update the list of DPTs and issue notices upon 404 etc.'''
+    channels = config["channels"].split(',')
+
+    dpt.check_for_dpt()
+
+    _404 = dpt.get_404()
+    for thread in _404:
+        for channel in channels:
+            irc.say(channel, "Oh no! A DPT has 404'd: {0} [{1} replies]"
+                    .format(dpt.thread_url.format(thread['no']),
+                            thread['replies']))
+
+    new = dpt.get_new()
+    for thread in new:
+        for channel in channels:
+            irc.say(channel, "A new DPT has appeared: {0} [{1}]"
+                    .format(dpt.thread_url.format(thread['no']),
+                            'λ' if dpt.match_image(thread) else '?'))
